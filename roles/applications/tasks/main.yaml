@@ -1,0 +1,104 @@
+---
+
+- name: Combine default and additional Homebrew packages
+  set_fact:
+    combined_homebrew_packages: "{{ default_applications | default([]) + additional_applications | default([]) }}"
+  tags: install_apps
+
+- name: Check if applications are already installed
+  ansible.builtin.stat:
+    path: "/Applications/{{ item.app_name }}.app"
+  loop: "{{ combined_homebrew_packages }}"
+  register: app_status
+  changed_when: false
+  tags: install_apps
+
+- name: Set combined applications list
+  set_fact:
+    existing_applications: "{{ combined_homebrew_packages | zip(app_status.results) | list }}"
+  tags: install_apps
+
+- name: Download applications
+  get_url:
+    url: "{{ item.0.app_url }}"
+    dest: "/tmp/{{ item.0.app_name }}.{{ item.0.download_file_type }}"
+    mode: '0755'
+  loop: "{{ existing_applications }}"
+  when: not item.1.stat.exists
+  register: downloaded_files
+  tags: install_apps
+
+- name: Install applications
+  tags: install_apps
+  block:
+    - name: Download applications
+      get_url:
+        url: "{{ item.0.app_url }}"
+        dest: "/tmp/{{ item.0.app_name }}.{{ item.0.download_file_type }}"
+        mode: '0755'
+      loop: "{{ existing_applications }}"
+      when: not item.1.stat.exists
+      register: downloaded_files
+
+    - name: Convert DMG to CDR
+      ansible.builtin.command:
+        cmd: "hdiutil convert '/tmp/{{ item.0.app_name }}.dmg' -format UDTO -o '/tmp/{{ item.0.app_name }}.cdr'"
+      loop: "{{ existing_applications }}"
+      when: not item.1.stat.exists and item.0.download_file_type == 'dmg'
+      register: converted_files
+
+    - name: Verify and Mount CDR
+      ansible.builtin.command:
+        cmd: "hdiutil attach '/tmp/{{ item.0.app_name }}.cdr' -quiet -nobrowse -noverify -noautoopen -mountpoint '/Volumes/{{ item.0.app_name }}'"
+      loop: "{{ existing_applications }}"
+      when: not item.1.stat.exists and item.0.download_file_type == 'dmg' and item.0.install_method == 'dmg'
+      register: mount_output
+      failed_when: "'failed' in mount_output.stderr"
+
+    - name: Copy application to Applications folder from DMG
+      ansible.builtin.command:
+        cmd: "cp -Ra '/Volumes/{{ item.0.app_name }}/{{ item.0.app_name }}.app' /Applications/"
+      loop: "{{ existing_applications }}"
+      become: true
+      when: not item.1.stat.exists and item.0.download_file_type == 'dmg' and item.0.install_method == 'dmg'
+
+    - name: Detach CDR
+      ansible.builtin.command:
+        cmd: "hdiutil detach '/Volumes/{{ item.0.app_name }}'"
+      ignore_errors: true
+      loop: "{{ existing_applications }}"
+      when: not item.1.stat.exists and item.0.download_file_type == 'dmg' and item.0.install_method == 'dmg'
+
+    - name: Install PKG files
+      ansible.builtin.command:
+        cmd: "sudo installer -pkg '/tmp/{{ item.0.app_name }}.pkg' -target /"
+      loop: "{{ existing_applications }}"
+      become: true
+      become_method: sudo
+      when: not item.1.stat.exists and item.0.download_file_type == 'pkg' and item.0.install_method == 'dmg'
+
+    - name: Unzip and install
+      ansible.builtin.unarchive:
+        src: "/tmp/{{ item.0.app_name }}.zip"
+        dest: "/Applications/"
+        remote_src: yes
+      loop: "{{ existing_applications }}"
+      when: not item.1.stat.exists and item.0.download_file_type == 'zip' and item.0.install_method == 'app'
+
+    - name: Install from the Installer App
+      ansible.builtin.command:
+        cmd: "open '/Applications/{{ item.0.installer_name }}.app'"
+      when: not item.1.stat.exists and item.0.download_file_type == 'zip' and item.0.install_method == 'app' and item.0.installer_type == 'app'
+      loop: "{{ existing_applications }}"
+
+    - name: Remove temp downloaded applications
+      ansible.builtin.file:
+        path: "/tmp/{{ item.0.app_name }}.{{ item.0.download_file_type }}"
+        state: absent
+      loop: "{{ existing_applications }}"
+
+    - name: Remove temp converted downloaded applications
+      ansible.builtin.file:
+        path: "/tmp/{{ item.0.app_name }}.cdr"
+        state: absent
+      loop: "{{ existing_applications }}"

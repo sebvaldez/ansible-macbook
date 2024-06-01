@@ -1,0 +1,12 @@
+---
+- name: Configure Macbook
+  hosts: all
+  gather_facts: true
+  vars_files:
+  - default.config.yaml
+  - config.yaml
+
+
+  roles:
+  - role: applications
+    tags: install_apps

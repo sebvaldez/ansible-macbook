@@ -1,0 +1,58 @@
+---
+
+additional_homebrew_packages:
+  - circleci # Run CircleCI locally
+  - dive # Docker image explorer
+  - gpg2 # GPG
+  - jq # JSON parser
+  - k9s # K8S monitoring tools
+  - kind # another k8s cluster tool
+  - nmap # Port scanning
+  - tree
+  - viddy
+  - watch
+  - wget # I like more the cURL
+  - testdisk # Data recovery tool
+  - tmux
+  - zsh-autosuggestions
+  - zsh-syntax-highlighting
+
+additional_applications:
+  - app_name: Brave Browser
+    app_url: https://laptop-updates.brave.com/download/BRV013?bitness=64
+    download_file_type: dmg
+    installer_type: app
+    install_method: dmg
+
+  - app_name: Caffeine
+    app_url: https://www.caffeine-app.net/download/sonoma/
+    download_file_type: zip
+    installer_type: zip
+    install_method: app
+
+  - app_name: Evernote
+    app_url: https://mac.desktop.evernote.com/builds/Evernote-latest.dmg
+    download_file_type: dmg
+    installer_type: app
+    install_method: dmg
+
+
+  # - app_name: LogiTune
+  # - app_name: PaperCut
+
+  - app_name: Spotify
+    app_url: https://download.scdn.co/SpotifyInstaller.zip
+    download_file_type: zip
+    installer_type: app
+    installer_name: Install Spotify
+    install_method: app
+
+  - app_name: Warp
+    app_url: https://releases.warp.dev/stable/v0.2024.04.23.08.01.stable_03/Warp.dmg
+    download_file_type: dmg
+    installer_type: app
+    install_method: dmg
+
+additional_dock_apps:
+  - "Brave Browser.app"
+  - "Warp.app"
