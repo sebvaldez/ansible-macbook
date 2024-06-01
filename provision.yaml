@@ -10,3 +10,5 @@
   roles:
   - role: applications
     tags: install_apps
+  - role: mise
+    tags: mise

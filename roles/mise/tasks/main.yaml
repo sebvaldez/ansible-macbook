@@ -1,0 +1,28 @@
+---
+- name: Check if mise is installed
+  command: which mise
+  register: mise_check
+  ignore_errors: true
+  tags: mise
+
+- name: Install mise if not installed
+  block:
+    - name: Create .local/bin directory if it does not exist
+      file:
+        path: "{{ ansible_user_dir }}/.local/bin"
+        state: directory
+        mode: '0755'
+
+    - name: Download mise for MacOS ARM64
+      get_url:
+        url: "https://mise.jdx.dev/mise-latest-macos-arm64"
+        dest: "{{ ansible_user_dir }}/.local/bin/mise"
+        mode: '0755'
+      when: mise_check.rc != 0
+
+    - name: Verify mise installation
+      command: "{{ ansible_user_dir }}/.local/bin/mise --version"
+      register: mise_version
+      changed_when: false
+  when: mise_check.rc != 0
+  tags: mise
