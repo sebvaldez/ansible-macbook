@@ -32,6 +32,12 @@ default_homebrew_packages:
   - zlib
 
 default_applications:
+  - app_name: ChatGPT
+    app_url: https://persistent.oaistatic.com/sidekick/public/ChatGPT_Desktop_public_latest.dmg
+    download_file_type: dmg
+    installer_type: app
+    install_method: dmg
+
   - app_name: Docker
     app_url: https://desktop.docker.com/mac/main/arm64/Docker.dmg?utm_source=docker&utm_medium=webreferral&utm_campaign=dd-smartbutton&utm_location=module
     download_file_type: dmg
