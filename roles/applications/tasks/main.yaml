@@ -29,6 +29,7 @@
   tags: install_apps
 
 - name: Install applications
+  become: true
   tags: install_apps
   block:
     - name: Download applications
@@ -39,6 +40,13 @@
       loop: "{{ existing_applications }}"
       when: not item.1.stat.exists
       register: downloaded_files
+
+    - name: Remove existing CDR files
+      ansible.builtin.file:
+        path: "/tmp/{{ item.0.app_name }}.cdr"
+        state: absent
+      loop: "{{ existing_applications }}"
+      when: item.0.download_file_type == 'dmg'
 
     - name: Convert DMG to CDR
       ansible.builtin.command:
