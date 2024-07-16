@@ -53,6 +53,13 @@ additional_applications:
     installer_type: app
     install_method: dmg
 
+  - app_name: Wave
+    app_url: https://dl.waveterm.dev/releases/Wave-darwin-universal-0.7.6.dmg
+    download_file_type: dmg
+    installer_type: app
+    install_method: dmg
+
 additional_dock_apps:
   - "Brave Browser.app"
   - "Warp.app"
+  - "Wave.app"
