@@ -1,0 +1,33 @@
+---
+
+- name: Check if dockutil is installed
+  command: command -v dockutil
+  register: dockutil_installed
+  changed_when: false
+  ignore_errors: true
+  tags: config_dock
+
+- name: Install dockutil
+  homebrew:
+    name: dockutil
+    state: present
+  when: dockutil_installed.rc != 0
+  tags: config_dock
+
+- name: Combine default dock and desired dock apps
+  set_fact:
+    desired_dock_apps: "{{ (desired_dock_apps | default([])) + (additional_dock_apps | default([])) }}"
+  tags: config_dock
+
+- name: Configure dock items
+  tags: config_dock
+  block:
+    - name: Remove unwanted apps from the Dock
+      command: "dockutil --remove all --no-restart"
+
+    - name: Add desired apps to the Dock
+      command: "dockutil --add '/Applications/{{ item }}' --no-restart"
+      loop: "{{ desired_dock_apps }}"
+
+    - name: Restart dock
+      command: killall Dock
