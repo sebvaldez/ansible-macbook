@@ -1,0 +1,57 @@
+---
+
+- name: Combine Homebrew packages
+  set_fact:
+    combined_homebrew_packages: "{{ default_homebrew_packages | default([]) + additional_homebrew_packages | default([]) }}"
+  tags: homebrew
+
+- name: Check if Homebrew is already installed
+  ansible.builtin.stat:
+    path: "{{ '/opt/homebrew/bin/brew' if ansible_machine == 'arm64' else '/usr/local/bin/brew' }}"
+  register: brew_installed
+  tags: homebrew
+
+- name: Collect Installed Homebrew Taps
+  command: brew tap
+  register: installed_homebrew_taps
+  changed_when: false
+  failed_when: false
+  when: brew_installed.stat.exists
+  tags: homebrew
+
+- name: Add Homebrew Taps
+  command: "brew tap {{ item.name }}{{ ' ' + item.url if item.url is defined else '' }}"
+  loop: "{{ default_homebrew_taps }}"
+  when: brew_installed.stat.exists and item.name not in installed_homebrew_taps.stdout_lines
+  tags: homebrew
+
+- name: Check timestamp of last brew update
+  ansible.builtin.stat:
+    path: "{{ ansible_env.HOME }}/.last_brew_update"
+  register: last_brew_update
+  when: brew_installed.stat.exists
+  tags: homebrew
+
+- name: Brew update
+  command: brew update
+  when:
+    - brew_installed.stat.exists
+    - (last_brew_update.stat.exists == false) or ((ansible_date_time.epoch | int) - (last_brew_update.stat.mtime | int) > 86400)  # 86400 seconds = 24 hours
+  notify: Update brew timestamp
+  tags: homebrew
+
+- name: Collect Installed Homebrew Packages
+  command: brew list --formula
+  register: installed_homebrew_packages
+  changed_when: false
+  failed_when: false
+  when: brew_installed.stat.exists
+  tags: homebrew
+
+- name: Install Homebrew Packages
+  command: brew install {{ item }}
+  loop: "{{ combined_homebrew_packages | difference(installed_homebrew_packages.stdout_lines) }}"
+  when:
+    - brew_installed.stat.exists
+    - item not in installed_homebrew_packages.stdout_lines
+  tags: homebrew

@@ -1,0 +1,5 @@
+---
+
+- name: Update brew timestamp
+  ansible.builtin.command: touch "{{ ansible_env.HOME }}/.last_brew_update"
+  changed_when: false
