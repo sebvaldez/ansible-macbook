@@ -1,4 +1,5 @@
 ---
+
 - name: Configure Macbook
   hosts: all
   gather_facts: true
@@ -6,9 +7,17 @@
   - default.config.yaml
   - config.yaml
 
+  pre_tasks:
+    - name: Homebrew
+      include_role:
+        name: homebrew
+        tasks_from: main.yaml
+      tags: homebrew
 
   roles:
   - role: applications
     tags: install_apps
+  - role: dock
+    tags: configure_mac_dock
   - role: mise
     tags: mise
